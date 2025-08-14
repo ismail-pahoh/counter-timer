@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enhanced Time Timer</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      .setup-container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        text-align: center;
+        max-width: 500px;
+        width: 90%;
+      }
+
+      h1 {
+        font-size: 2.5em;
+        margin-bottom: 30px;
+        font-weight: 300;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .time-input-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+      }
+
+      .time-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .time-input {
+        width: 80px;
+        height: 60px;
+        font-size: 24px;
+        text-align: center;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        backdrop-filter: blur(5px);
+        transition: all 0.3s ease;
+      }
+
+      .time-input:focus {
+        outline: none;
+        border-color: #4caf50;
+        box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+      }
+
+      .time-input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .time-label {
+        font-size: 14px;
+        margin-top: 8px;
+        opacity: 0.8;
+      }
+
+      .separator {
+        font-size: 30px;
+        font-weight: bold;
+        margin-top: -20px;
+      }
+
+      .preset-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .preset-btn {
+        padding: 10px 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 25px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+      }
+
+      .preset-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+      }
+
+      .start-btn {
+        background: linear-gradient(45deg, #4caf50, #45a049);
+        color: white;
+        border: none;
+        padding: 18px 40px;
+        font-size: 20px;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 1px;
+      }
+
+      .start-btn:hover {
+        background: linear-gradient(45deg, #45a049, #4caf50);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+      }
+
+      .start-btn:active {
+        transform: translateY(-1px);
+      }
+
+      /* Fullscreen Timer Modal */
+      #timerModal {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+      }
+
+      .timer-container {
+        text-align: center;
+        position: relative;
+      }
+
+      .base-timer {
+        position: relative;
+        width: 80vmin;
+        height: 80vmin;
+        max-width: 400px;
+        max-height: 400px;
+      }
+
+      .base-timer__svg {
+        transform: scaleX(-1);
+        filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+      }
+
+      .base-timer__circle {
+        fill: none;
+        stroke: none;
+      }
+
+      .base-timer__path-elapsed {
+        stroke-width: 8px;
+        stroke: rgba(255, 255, 255, 0.2);
+      }
+
+      .base-timer__path-remaining {
+        stroke-width: 8px;
+        stroke-linecap: round;
+        transform: rotate(90deg);
+        transform-origin: center;
+        transition: 1s linear all;
+        fill-rule: nonzero;
+        stroke: currentColor;
+        filter: drop-shadow(0 0 10px currentColor);
+      }
+
+      .base-timer__path-remaining.green {
+        color: #4caf50;
+      }
+
+      .base-timer__path-remaining.orange {
+        color: #ff9800;
+      }
+
+      .base-timer__path-remaining.red {
+        color: #f44336;
+      }
+
+      .base-timer__label {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8vmin;
+        color: white;
+        font-weight: 300;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        font-family: "Courier New", monospace;
+      }
+
+      .timer-controls {
+        margin-top: 40px;
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+      }
+
+      .control-btn {
+        padding: 12px 24px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 25px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+        font-size: 16px;
+      }
+
+      .control-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+      }
+
+      .pause-btn {
+        background: linear-gradient(45deg, #ff9800, #f57c00);
+      }
+
+      .stop-btn {
+        background: linear-gradient(45deg, #f44336, #d32f2f);
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 30px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4caf50, #45a049);
+        transition: width 1s linear;
+        border-radius: 2px;
+      }
+
+      .timer-title {
+        font-size: 1.5em;
+        margin-bottom: 20px;
+        opacity: 0.8;
+        font-weight: 300;
+      }
+
+      /* Pulse animation for final seconds */
+      .pulse {
+        animation: pulse 1s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .setup-container {
+          padding: 30px 20px;
+        }
+
+        h1 {
+          font-size: 2em;
+        }
+
+        .time-input-container {
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .preset-buttons {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .base-timer__label {
+          font-size: 12vmin;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="setup-container">
+      <h1>🕒 จับเวลา</h1>
+
+      <div class="time-input-container">
+        <div class="time-group">
+          <input
+            type="number"
+            id="minutesInput"
+            class="time-input"
+            value="0"
+            min="0"
+            max="59"
+            placeholder="00"
+          />
+          <label class="time-label">นาที</label>
+        </div>
+        <div class="separator">:</div>
+        <div class="time-group">
+          <input
+            type="number"
+            id="secondsInput"
+            class="time-input"
+            value="30"
+            min="0"
+            max="59"
+            placeholder="00"
+          />
+          <label class="time-label">วินาที</label>
+        </div>
+      </div>
+
+      <div class="preset-buttons">
+        <button class="preset-btn" onclick="setPreset(0, 30)">30 วินาที</button>
+        <button class="preset-btn" onclick="setPreset(1, 0)">1 นาที</button>
+        <button class="preset-btn" onclick="setPreset(2, 0)">2 นาที</button>
+        <button class="preset-btn" onclick="setPreset(5, 0)">5 นาที</button>
+      </div>
+
+      <button class="start-btn" onclick="startNewTimer()">เริ่มจับเวลา</button>
+    </div>
+
+    <!-- Fullscreen Timer Modal -->
+    <div id="timerModal">
+      <div class="timer-container">
+        <div class="timer-title">กำลังนับถอยหลัง...</div>
+        <div id="app"></div>
+        <div class="timer-controls">
+          <button
+            class="control-btn pause-btn"
+            id="pauseBtn"
+            onclick="togglePause()"
+          >
+            หยุดชั่วคราว
+          </button>
+          <button class="control-btn stop-btn" onclick="stopTimer()">
+            หยุด
+          </button>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audio elements -->
+    <audio id="beep10" preload="auto">
+      <source src="beep.wav" type="audio/ogg" />
+    </audio>
+    <audio id="alarmEnd" preload="auto">
+      <source src="end.mp3" type="audio/ogg" />
+    </audio>
+
+    <script>
+      const FULL_DASH_ARRAY = 283;
+      const WARNING_THRESHOLD = 10;
+      const ALERT_THRESHOLD = 5;
+
+      const COLOR_CODES = {
+        info: { color: "green" },
+        warning: { color: "orange", threshold: WARNING_THRESHOLD },
+        alert: { color: "red", threshold: ALERT_THRESHOLD },
+      };
+
+      let TIME_LIMIT = 30;
+      let ORIGINAL_TIME_LIMIT = 30;
+      let timePassed = 0;
+      let timeLeft = TIME_LIMIT;
+      let timerInterval = null;
+      let isPaused = false;
+      let remainingPathColor = COLOR_CODES.info.color;
+
+      function setPreset(minutes, seconds) {
+        document.getElementById("minutesInput").value = minutes;
+        document.getElementById("secondsInput").value = seconds;
+      }
+
+      function startNewTimer() {
+        const minutes =
+          parseInt(document.getElementById("minutesInput").value) || 0;
+        const seconds =
+          parseInt(document.getElementById("secondsInput").value) || 0;
+
+        TIME_LIMIT = minutes * 60 + seconds;
+
+        if (TIME_LIMIT <= 0) {
+          alert("โปรดตั้งเวลาที่มากกว่า 0");
+          return;
+        }
+
+        ORIGINAL_TIME_LIMIT = TIME_LIMIT;
+        timePassed = 0;
+        timeLeft = TIME_LIMIT;
+        isPaused = false;
+        remainingPathColor = COLOR_CODES.info.color;
+
+        clearInterval(timerInterval);
+        document.getElementById("timerModal").style.display = "flex";
+        document.getElementById("pauseBtn").textContent = "หยุดชั่วคราว";
+
+        document.getElementById("app").innerHTML = `
+              <div class="base-timer">
+                <svg class="base-timer__svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <g class="base-timer__circle">
+                    <circle class="base-timer__path-elapsed" cx="50" cy="50" r="45"></circle>
+                    <path
+                      id="base-timer-path-remaining"
+                      stroke-dasharray="283"
+                      class="base-timer__path-remaining ${remainingPathColor}"
+                      d="M 50, 50 m -45, 0 a 45,45 0 1,0 90,0 a 45,45 0 1,0 -90,0"
+                    ></path>
+                  </g>
+                </svg>
+                <span id="base-timer-label" class="base-timer__label">${formatTime(
+                  timeLeft
+                )}</span>
+              </div>`;
+
+        updateProgressBar();
+        startTimer();
+      }
+
+      function startTimer() {
+        timerInterval = setInterval(() => {
+          if (!isPaused) {
+            timePassed++;
+            timeLeft = TIME_LIMIT - timePassed;
+
+            document.getElementById("base-timer-label").innerHTML =
+              formatTime(timeLeft);
+            setCircleDasharray();
+            setRemainingPathColor(timeLeft);
+            updateProgressBar();
+
+            // Add pulse effect for final 5 seconds
+            const timer = document.querySelector(".base-timer");
+            if (timeLeft <= 5 && timeLeft > 0) {
+              timer.classList.add("pulse");
+            } else {
+              timer.classList.remove("pulse");
+            }
+
+            // Play warning sound at 10 seconds
+            if (timeLeft === 6) {
+              try {
+                // document.getElementById("beep10").play();
+                const beep = document.getElementById("beep10");
+                let countdown = 5;
+                const interval = setInterval(() => {
+                  // Try to play the beep
+                  beep.pause();
+                  beep.currentTime = 0; // rewind to start
+                  beep
+                    .play()
+                    .catch((e) => console.log("ไม่สามารถเล่นเสียง beep ได้"));
+                  console.log(countdown);
+                  countdown--;
+                  if (countdown === 0) {
+                    clearInterval(interval); // Stop after 5 plays
+                  }
+                }, 1000); // Every 1 second
+              } catch (e) {
+                console.log("Could not play warning sound");
+              }
+            }
+
+            // Timer finished
+            if (timeLeft === 0) {
+              clearInterval(timerInterval);
+              try {
+                document.getElementById("alarmEnd").play();
+              } catch (e) {
+                console.log("Could not play alarm sound");
+              }
+
+              setTimeout(() => {
+                document.getElementById("timerModal").style.display = "none";
+                showCompletionMessage();
+              }, 5000);
+            }
+          }
+        }, 1000);
+      }
+
+      function togglePause() {
+        isPaused = !isPaused;
+        const pauseBtn = document.getElementById("pauseBtn");
+        pauseBtn.textContent = isPaused ? "เริ่มต่อ" : "หยุดชั่วคราว";
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        document.getElementById("timerModal").style.display = "none";
+      }
+
+      function formatTime(time) {
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        return `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`;
+      }
+
+      function setRemainingPathColor(timeLeft) {
+        const { alert, warning, info } = COLOR_CODES;
+        const path = document.getElementById("base-timer-path-remaining");
+
+        if (timeLeft <= alert.threshold) {
+          path.classList.remove(warning.color);
+          path.classList.add(alert.color);
+        } else if (timeLeft <= warning.threshold) {
+          path.classList.remove(info.color);
+          path.classList.add(warning.color);
+        } else {
+          path.classList.remove(warning.color, alert.color);
+          path.classList.add(info.color);
+        }
+      }
+
+      function calculateTimeFraction() {
+        const rawTimeFraction = timeLeft / ORIGINAL_TIME_LIMIT;
+        return (
+          rawTimeFraction - (1 / ORIGINAL_TIME_LIMIT) * (1 - rawTimeFraction)
+        );
+      }
+
+      function setCircleDasharray() {
+        const circleDasharray = `${(
+          calculateTimeFraction() * FULL_DASH_ARRAY
+        ).toFixed(0)} 283`;
+        document
+          .getElementById("base-timer-path-remaining")
+          .setAttribute("stroke-dasharray", circleDasharray);
+      }
+
+      function updateProgressBar() {
+        const progressFill = document.getElementById("progressFill");
+        const percentage =
+          ((ORIGINAL_TIME_LIMIT - timeLeft) / ORIGINAL_TIME_LIMIT) * 100;
+        progressFill.style.width = percentage + "%";
+      }
+
+      function showCompletionMessage() {
+        const completionDiv = document.createElement("div");
+        completionDiv.style.cssText = `
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              background: linear-gradient(45deg, #4CAF50, #45a049);
+              color: white;
+              padding: 30px;
+              border-radius: 20px;
+              font-size: 24px;
+              font-weight: bold;
+              text-align: center;
+              z-index: 1000;
+              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+              animation: fadeIn 0.5s ease-in-out;
+            `;
+        completionDiv.innerHTML = "🎉 หมดเวลาแล้ว! 🎉";
+        document.body.appendChild(completionDiv);
+
+        setTimeout(() => {
+          completionDiv.remove();
+        }, 3000);
+      }
+
+      // Add CSS animation for completion message
+      const style = document.createElement("style");
+      style.textContent = `
+            @keyframes fadeIn {
+              from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+              to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            }
+          `;
+      document.head.appendChild(style);
+
+      // Auto-format input values
+      document
+        .getElementById("minutesInput")
+        .addEventListener("input", function () {
+          if (this.value > 59) this.value = 59;
+          if (this.value < 0) this.value = 0;
+        });
+
+      document
+        .getElementById("secondsInput")
+        .addEventListener("input", function () {
+          if (this.value > 59) this.value = 59;
+          if (this.value < 0) this.value = 0;
+        });
+
+      // Keyboard shortcuts
+      document.addEventListener("keydown", function (e) {
+        if (e.code === "Space") {
+          e.preventDefault();
+          if (document.getElementById("timerModal").style.display === "flex") {
+            togglePause();
+          } else {
+            startNewTimer();
+          }
+        } else if (e.code === "Escape") {
+          stopTimer();
+        }
+      });
+    </script>
+  </body>
+</html>
